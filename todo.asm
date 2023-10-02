@@ -123,6 +123,11 @@ main:
     close [connfd]
     jmp .next_request
 
+.serve_redirect:
+    funcall2 write_cstr, [connfd], redirect_response
+    close [connfd]
+    jmp .next_request
+
 .serve_error_400:
     funcall2 write_cstr, [connfd], error_400
     close [connfd]
@@ -144,7 +149,7 @@ main:
 
     funcall2 add_todo, [request_cur], [request_len]
     call save_todos
-    jmp .serve_index_page
+    jmp .serve_redirect
 
 .delete_todo_and_serve_index_page:
     add [request_cur], delete_form_data_prefix_len
@@ -154,7 +159,7 @@ main:
     mov rdi, rax
     call delete_todo
     call save_todos
-    jmp .serve_index_page
+    jmp .serve_redirect
 
 .shutdown:
     funcall2 write_cstr, STDOUT, ok_msg
@@ -401,6 +406,10 @@ index_page_footer    db "  <li>", 10
                      db "<form method='post' action='/shutdown'>", 10
                      db "    <input type='submit' value='shutdown'>", 10
                      db "</form>", 10
+                     db 0
+redirect_response    db "HTTP/1.1 303 See Other", 13, 10
+                     db "Location: /", 13, 10
+                     db 13, 10
                      db 0
 todo_header          db "  <li>"
                      db 0
